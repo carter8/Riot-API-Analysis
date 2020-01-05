@@ -7,10 +7,11 @@ To look up the stats for a different player, simply change the summoner name
 """
 
 import API
+from SummonerLookupFunctions import get_game_stats, get_ranked_league, add_game_stats, print_stats
 
-api_key = 'RGAPI-adab60fc-be49-40e9-b32c-39f814ef8f6e' # expires in 24hrs, generated at: developer.riotgames.com
-summoner_name = 'xo slime'
-max_games = 90 # cannot be larger than 98 due to rate limit on requests to the Riot API
+api_key = 'RGAPI-d0dffd50-5cd4-4c03-a62f-fb76d553f10d'  # expires in 24hrs, generated at: developer.riotgames.com
+summoner_name = 'The Carter III'
+max_games = 90  # cannot be larger than 98 due to rate limit on requests to the Riot API
 
 connection = API.RiotAPI(api_key)
 
@@ -19,73 +20,6 @@ summoner = connection.get_summoner_by_name(summoner_name)
 
 # get the most recent matches for the summoner
 match_list = connection.get_matchlist_by_account(summoner['accountId'])
-
-
-def get_game_stats(game_id, account_id):
-    """
-    Get the stats of a given player for a single game
-
-    :param int game_id:     The match ID (also called game ID)
-    :param int account_id:  The account ID
-
-    :returns:  list of player statistics
-                   list indices and values
-                    0:  1 if win, 0 if loss
-                    1:  number of kills
-                    2:  number of deaths
-                    3:  number of assists
-                    4:  1 (number of games played. will always be 1)
-    """
-    # want to return win/loss, kills, deaths, assists
-    stats = [0] * 5
-    participant_id = 0
-    game_stats = connection.get_match_by_id(game_id)
-    for player in game_stats['participantIdentities']:
-        if player['player']['accountId'] == account_id:
-            participant_id = player['participantId']
-            break
-    for player in game_stats['participants']:
-        if player['participantId'] == participant_id:
-            if player['stats']['win']:
-                stats[0] = 1
-            stats[1] += player['stats']['kills']
-            stats[2] += player['stats']['deaths']
-            stats[3] += player['stats']['assists']
-            stats[4] = 1
-            break
-    return stats
-
-
-def add_game_stats(total_stats, stats_to_add):
-    """
-    Adds a list of game stats to another list of game stats
-
-    :param list total_stats:   The list of total stats that will get the other list added to it
-    :param list stats_to_add:  The list of game stats that are being added
-    """
-    total_stats[0] += stats_to_add[0]
-    total_stats[1] += stats_to_add[1]
-    total_stats[2] += stats_to_add[2]
-    total_stats[3] += stats_to_add[3]
-    total_stats[4] += stats_to_add[4]
-
-
-def print_stats(stats, queue):
-    """
-    Prints the win rate and kill/death ratio for a list of player stats
-
-    :param list stats:    The list of player stats to that are being summarized and printed
-    :param string queue:  The name of the queue where the stats are from
-    """
-    stats_to_print = stats
-    stats_to_print.append(stats[4] - stats[0])
-    stats_to_print[1] = stats_to_print[1] / stats_to_print[4]  # avg kills
-    stats_to_print[2] = stats_to_print[2] / stats_to_print[4]  # avg deaths
-    stats_to_print[3] = stats_to_print[3] / stats_to_print[4]  # avg assists
-    print('%s | Winrate: %.0f%% (%dW / %dL)' % (queue, stats_to_print[0]/stats_to_print[4]*100, stats_to_print[0], stats_to_print[5]))
-    print('Average KDA: %.2f' % (stats_to_print[1]/stats_to_print[2]))
-    print()
-
 
 # iterate through match list and get stats for each queue
 urf_stats = [0] * 5
@@ -101,34 +35,34 @@ for match in match_list['matches']:
     if total_games < max_games:
         if match['queue'] == 430:
             # unranked blind pick
-            blind_game = get_game_stats(match['gameId'], summoner['accountId'])
+            blind_game = get_game_stats(match['gameId'], summoner['accountId'], connection)
             add_game_stats(blind_stats, blind_game)
         elif match['queue'] == 920:
             # poro king
-            pk_game = get_game_stats(match['gameId'], summoner['accountId'])
+            pk_game = get_game_stats(match['gameId'], summoner['accountId'], connection)
             add_game_stats(pk_stats, pk_game)
         elif match['queue'] == 450:
             # ARAM
-            aram_game = get_game_stats(match['gameId'], summoner['accountId'])
+            aram_game = get_game_stats(match['gameId'], summoner['accountId'], connection)
             add_game_stats(aram_stats, aram_game)
         elif match['queue'] == 400:
             # unranked draft pick
-            draft_game = get_game_stats(match['gameId'], summoner['accountId'])
+            draft_game = get_game_stats(match['gameId'], summoner['accountId'], connection)
             add_game_stats(draft_stats, draft_game)
         elif match['queue'] == 420:
             # ranked solo/duo pick
-            ranked_game = get_game_stats(match['gameId'], summoner['accountId'])
+            ranked_game = get_game_stats(match['gameId'], summoner['accountId'], connection)
             add_game_stats(ranked_stats, ranked_game)
         elif match['queue'] == 440:
             # ranked flex pick
-            ranked_flex_game = get_game_stats(match['gameId'], summoner['accountId'])
+            ranked_flex_game = get_game_stats(match['gameId'], summoner['accountId'], connection)
             add_game_stats(ranked_flex_stats, ranked_flex_game)
         elif match['queue'] == 900:
             # URF
-            urf_game = get_game_stats(match['gameId'], summoner['accountId'])
+            urf_game = get_game_stats(match['gameId'], summoner['accountId'], connection)
             add_game_stats(urf_stats, urf_game)
         else:
-            print('Queue not coded. Queue #: %d' % match['queue'])
+            print('Queue not coded. Queue #: %d' % match['queue'], connection)
     else:
         break
 
@@ -164,5 +98,10 @@ if ranked_flex_stats[4] != 0:
 if ranked_stats[4] != 0:
     add_game_stats(total_stats, ranked_stats)
     print_stats(ranked_stats, 'Ranked Solo/Duo')
+
+# get and print the ranked league if summoner is a member of one
+ranked_league = get_ranked_league(summoner['id'], connection)
+if ranked_league is not None:
+    print('Ranked Solo/Duo League: %s\n' % ranked_league)
 
 print_stats(total_stats, 'Total')
