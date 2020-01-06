@@ -19,7 +19,6 @@ from ActiveGameFunctions import analyze_active_game
 # api key is generated at developer.riotgames.com
 # expires 24 hours after generation
 api_key = 'INSERT-API-KEY-HERE'
-api_key = 'RGAPI-d0dffd50-5cd4-4c03-a62f-fb76d553f10d'
 
 # your summoner name, to analyze the other players in your game
 summoner_name = 'The Carter III'
