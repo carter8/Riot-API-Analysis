@@ -9,7 +9,10 @@ To look up the stats for a different player, simply change the summoner name
 import API
 from SummonerLookupFunctions import get_game_stats, get_ranked_league, add_game_stats, print_stats
 
-api_key = 'RGAPI-d0dffd50-5cd4-4c03-a62f-fb76d553f10d'  # expires in 24hrs, generated at: developer.riotgames.com
+# api key is generated at developer.riotgames.com
+# expires 24 hours after generation
+api_key = 'INSERT-API-KEY-HERE'
+
 summoner_name = 'The Carter III'
 max_games = 90  # cannot be larger than 98 due to rate limit on requests to the Riot API
 
